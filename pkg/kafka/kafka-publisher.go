@@ -220,13 +220,6 @@ func validator(brokerEndpoints string) error {
 		if host == "" || port == "" {
 			return fmt.Errorf("%s: host or port cannot be ''", addr)
 		}
-		// Try to resolve if the hostname was used in the address
-		if ip, err := net.LookupIP(host); err != nil || ip == nil {
-			// Check if IP address was used in address instead of a host name
-			if net.ParseIP(host) == nil {
-				return fmt.Errorf("%s: fail to parse host part of address", addr)
-			}
-		}
 		np, err := strconv.Atoi(port)
 		if err != nil {
 			return fmt.Errorf("%s: fail to parse port with error: %w", addr, err)
