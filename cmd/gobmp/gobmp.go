@@ -22,15 +22,18 @@ import (
 )
 
 var (
-	dstPort   int
-	srcPort   int
-	perfPort  int
-	kafkaSrv  string
-	natsSrv   string
-	intercept string
-	splitAF   string
-	dump      string
-	file      string
+	dstPort                int
+	srcPort                int
+	perfPort               int
+	kafkaSrv               string
+	kafkaSrvCACertPath     string
+	kafkaSrvClientCertPath string
+	kafkaSrvClientKeyPath  string
+	natsSrv                string
+	intercept              string
+	splitAF                string
+	dump                   string
+	file                   string
 )
 
 func init() {
@@ -38,6 +41,9 @@ func init() {
 	flag.IntVar(&srcPort, "source-port", 5000, "port exposed to outside")
 	flag.IntVar(&dstPort, "destination-port", 5050, "port openBMP is listening")
 	flag.StringVar(&kafkaSrv, "kafka-server", "", "URL to access Kafka server")
+	flag.StringVar(&kafkaSrvCACertPath, "kafka-server-ca-cert-path", "", "Kafka server: CA certificate path")
+	flag.StringVar(&kafkaSrvClientCertPath, "kafka-server-client-cert-path", "", "Kafka server: client certificate path")
+	flag.StringVar(&kafkaSrvClientKeyPath, "kafka-server-client-key-path", "", "Kafka server: client key path")
 	flag.StringVar(&natsSrv, "nats-server", "", "URL to access NATS server")
 	flag.StringVar(&intercept, "intercept", "false", "When intercept set \"true\", all incomming BMP messges will be copied to TCP port specified by destination-port, otherwise received BMP messages will be published to Kafka.")
 	flag.StringVar(&splitAF, "split-af", "true", "When set \"true\" (default) ipv4 and ipv6 will be published in separate topics. if set \"false\" the same topic will be used for both address families.")
@@ -79,7 +85,7 @@ func main() {
 		}
 		glog.V(5).Infof("NATS publisher has been successfully initialized.")
 	default:
-		publisher, err = kafka.NewKafkaPublisher(kafkaSrv)
+		publisher, err = kafka.NewKafkaPublisher(kafkaSrv, kafkaSrvCACertPath, kafkaSrvClientCertPath, kafkaSrvClientKeyPath)
 		if err != nil {
 			glog.Errorf("failed to initialize Kafka publisher with error: %+v", err)
 			os.Exit(1)

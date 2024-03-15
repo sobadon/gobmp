@@ -44,7 +44,8 @@ func main() {
 	defer f.Close()
 
 	// Initializing publisher process
-	publisher, err := kafka.NewKafkaPublisher(msgSrvAddr)
+	// TODO: Add TLS flags
+	publisher, err := kafka.NewKafkaPublisher(msgSrvAddr, "", "", "")
 	if err != nil {
 		glog.Errorf("fail to initialize Kafka publisher with error: %+v", err)
 		os.Exit(1)

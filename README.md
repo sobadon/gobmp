@@ -156,6 +156,13 @@ When intercept set "true", all incomming BMP messages will be processed and a co
 
 Kafka server TCP/IP address
 
+```
+-kafka-server-ca-cert-path ./ca.crt
+-kafka-server-client-cert-path ./client.crt
+-kafka-server-client-key-path ./client.key
+```
+
+Kafka server CA certificate, client certificate and client key paths
 
 ```
 --msg-file={message file path and location} (default "/tmp/messages.json")

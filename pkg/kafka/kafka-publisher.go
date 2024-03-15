@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"log"
@@ -146,7 +148,7 @@ func (p *publisher) Stop() {
 }
 
 // NewKafkaPublisher instantiates a new instance of a Kafka publisher
-func NewKafkaPublisher(kafkaSrv string) (pub.Publisher, error) {
+func NewKafkaPublisher(kafkaSrv string, kafkaSrvCACertPath, kafkaSrvClientCertPath, kafkaSrvClientKeyPath string) (pub.Publisher, error) {
 	glog.Infof("Initializing Kafka producer client")
 	if err := validator(kafkaSrv); err != nil {
 		glog.Errorf("Failed to validate Kafka server address %s with error: %+v", kafkaSrv, err)
@@ -164,6 +166,32 @@ func NewKafkaPublisher(kafkaSrv string) (pub.Publisher, error) {
 	config.Metadata.Retry.Max = 300
 	config.Metadata.Retry.Backoff = time.Second * 10
 	config.Version = sarama.V2_1_0_0
+
+	// 暗黙的 mTLS
+	if kafkaSrvCACertPath != "" {
+		config.Net.TLS.Enable = true
+
+		caCert, err := os.ReadFile(kafkaSrvCACertPath)
+		if err != nil {
+			glog.Errorf("Unable to read CA cert from %s: %v", kafkaSrvCACertPath, err)
+			return nil, err
+		}
+		caCertPool := x509.NewCertPool()
+		if ok := caCertPool.AppendCertsFromPEM(caCert); !ok {
+			glog.Errorf("Unable to append CA cert from %s", kafkaSrvCACertPath)
+			return nil, err
+		}
+		clientCert, err := tls.LoadX509KeyPair(kafkaSrvClientCertPath, kafkaSrvClientKeyPath)
+		if err != nil {
+			glog.Errorf("Unable to load client cert and key from %s and %s: %v", kafkaSrvClientCertPath, kafkaSrvClientKeyPath, err)
+			return nil, err
+		}
+
+		config.Net.TLS.Config = &tls.Config{
+			RootCAs:      caCertPool,
+			Certificates: []tls.Certificate{clientCert},
+		}
+	}
 
 	kafkaSrvs := strings.Split(kafkaSrv, ",")
 	ca, err := sarama.NewClusterAdmin(kafkaSrvs, config)
